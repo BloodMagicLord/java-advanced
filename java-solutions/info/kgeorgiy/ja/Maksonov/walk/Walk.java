@@ -13,7 +13,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class Walk {
-
+    // :NOTE: DEFAULT
     private final static String ZERO40_HASH = bytesToString(new byte[20]);
     private final static int BUFFER_SIZE = 1024;
 
@@ -47,6 +47,7 @@ public class Walk {
             }
         } catch (IOException e) {
             throw new IOException("Cannot read the file " + fileName);
+            // :NOTE: security exception
         } catch (SecurityException e) {
             throw new SecurityException("Forbidden to read the file " + fileName + " : " + e.getMessage());
         }
@@ -70,6 +71,7 @@ public class Walk {
         }
 
         try {
+            // :NOTE: getParent
             if (output.getParent() != null) {
                 Files.createDirectories(output.getParent());
             }
@@ -99,6 +101,7 @@ public class Walk {
                 }
                 writer.newLine();
             }
+            // :NOTE: do not merge exception
         } catch (IOException e) {
             System.err.println("Cannot open Input/Output files error: " + e.getMessage());
         } catch (SecurityException e) {

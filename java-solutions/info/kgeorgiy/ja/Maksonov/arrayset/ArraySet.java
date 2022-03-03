@@ -26,6 +26,11 @@ public class ArraySet<E> extends AbstractSet<E> implements SortedSet<E> {
         this.elements = makeSet(new ArrayList<>(elements));
     }
 
+    public ArraySet(List<E> list, Comparator<E> comparator) {
+        this.elements = list;
+        this.comparator = comparator;
+    }
+
     //==================================================================//
     @Override
     public int size() {
@@ -64,14 +69,14 @@ public class ArraySet<E> extends AbstractSet<E> implements SortedSet<E> {
     public SortedSet<E> headSet(E toElement) throws IllegalArgumentException {
         int to = search(toElement);
         List<E> newElements = elements.subList(0, to);
-        return new ArraySet<> (newElements, comparator);
+        return new ArraySet<>(newElements, comparator);
     }
 
     @Override
     public SortedSet<E> tailSet(E fromElement) {
         int from = search(fromElement);
         List<E> newElements = elements.subList(from, elements.size());
-        return new ArraySet<> (newElements, comparator);
+        return new ArraySet<>(newElements, comparator);
     }
 
     @Override
@@ -81,7 +86,7 @@ public class ArraySet<E> extends AbstractSet<E> implements SortedSet<E> {
         int from = search(fromElement);
         int to = search(toElement);
         List<E> newElements = elements.subList(from, to);
-        return new ArraySet<> (newElements, comparator);
+        return new ArraySet<>(newElements, comparator);
     }
 
     //==================================================================//

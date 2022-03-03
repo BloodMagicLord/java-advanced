@@ -1,9 +1,6 @@
 package info.kgeorgiy.ja.Maksonov.walk;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -13,9 +10,10 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class Walk {
-    // :NOTE: DEFAULT
-    private final static String ZERO40_HASH = bytesToString(new byte[20]);
+    private final static String DEFAULT_HASH = bytesToString(new byte[20]);
     private final static int BUFFER_SIZE = 1024;
+    private static final byte[] buffer = new byte[BUFFER_SIZE];
+    private static MessageDigest sha = null;
 
     private static String bytesToString (byte[] bytes) {
         if (bytes != null) {
@@ -25,31 +23,27 @@ public class Walk {
             }
             return sb.toString();
         }
-        return ZERO40_HASH;
+        return DEFAULT_HASH;
     }
 
-    private static String getHash(Path path, String fileName) throws NoSuchAlgorithmException, IOException, SecurityException {
+    private static String getHash(Path path, String fileName) throws IOException, SecurityException {
+        if (sha == null) {
+            return DEFAULT_HASH;
+        }
+
         byte[] hash;
         try (InputStream file = Files.newInputStream(path)) {
             int value;
-            byte[] buffer = new byte[BUFFER_SIZE];
-            MessageDigest sha;
             try {
-                sha = MessageDigest.getInstance("SHA-1");
                 while ((value = file.read(buffer)) >= 0) {
                     sha.update(buffer, 0, value);
                 }
                 hash = sha.digest();
             } catch (IOException e) {
                 throw new IOException("Error while reading the file " + fileName + " : " + e.getMessage());
-            } catch (NoSuchAlgorithmException e) {
-                throw new NoSuchAlgorithmException("No SHA-1 algorithm" + e.getMessage());
             }
         } catch (IOException e) {
             throw new IOException("Cannot read the file " + fileName);
-            // :NOTE: security exception
-        } catch (SecurityException e) {
-            throw new SecurityException("Forbidden to read the file " + fileName + " : " + e.getMessage());
         }
 
         return bytesToString(hash);
@@ -71,41 +65,41 @@ public class Walk {
         }
 
         try {
-            // :NOTE: getParent
-            if (output.getParent() != null) {
-                Files.createDirectories(output.getParent());
+            Path parent = output.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
             }
         } catch (IOException e) {
             System.err.println("Cannot create output file: " + e.getMessage());
             return;
-        } catch (SecurityException e) {
-            System.err.println("Forbidden to create output file: " + e.getMessage());
-            return;
         }
 
-        try (BufferedReader reader = Files.newBufferedReader(input, StandardCharsets.UTF_8);
-             BufferedWriter writer = Files.newBufferedWriter(output, StandardCharsets.UTF_8)) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                try {
-                    Path path = Paths.get(line);
-                    writer.write(String.format("%s %s", getHash(path, line), line));
-                } catch (IOException e) {
-                    System.err.println("Error while writing to file: " + e.getMessage());
-                    writer.write(String.format("%s %s", ZERO40_HASH, line));
-                } catch (InvalidPathException ignored) {
-                    writer.write(String.format("%s %s", ZERO40_HASH, line));
-                } catch (SecurityException | NoSuchAlgorithmException e) {
-                    System.err.println(e.getMessage());
-                    writer.write(String.format("%s %s", ZERO40_HASH, line));
+        try {
+            sha = MessageDigest.getInstance("SHA-1");
+        } catch (NoSuchAlgorithmException e) {
+            System.err.println("No SHA-1 algorithm");
+        }
+
+        try (BufferedReader reader = Files.newBufferedReader(input, StandardCharsets.UTF_8)) {
+            try(BufferedWriter writer = Files.newBufferedWriter(output, StandardCharsets.UTF_8)) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    try {
+                        Path path = Paths.get(line);
+                        writer.write(String.format("%s %s", getHash(path, line), line));
+                    } catch (IOException | InvalidPathException e) {
+                        if (e instanceof IOException) {
+                            System.err.println("Error while writing to file: " + line + " : " + e.getMessage());
+                        }
+                        writer.write(String.format("%s %s", DEFAULT_HASH, line));
+                    }
+                    writer.newLine();
                 }
-                writer.newLine();
+            } catch (IOException e) {
+                System.err.println("Cannot open output file error: " + e.getMessage());
             }
-            // :NOTE: do not merge exception
         } catch (IOException e) {
-            System.err.println("Cannot open Input/Output files error: " + e.getMessage());
-        } catch (SecurityException e) {
-            System.err.println("Forbidden to read/write files: " + e.getMessage());
+            System.err.println("Cannot open input file error: " + e.getMessage());
         }
     }
 }

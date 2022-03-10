@@ -15,6 +15,7 @@ import java.util.stream.Stream;
 public class StudentDB implements StudentQuery {
 
     private static final Comparator<Student> ID_COMPARATOR = Student::compareTo;
+    // :NOTE: double reverseOrder
     private static final Comparator<Student> NAME_COMPARATOR = Comparator.comparing(Student::getLastName, Comparator.reverseOrder()).
             thenComparing(Student::getFirstName, Comparator.reverseOrder()).
             thenComparing(ID_COMPARATOR);
@@ -43,6 +44,7 @@ public class StudentDB implements StudentQuery {
 
     @Override
     public Set<String> getDistinctFirstNames(List<Student> students) {
+        // :NOTE: order
         return buildCollection(students.stream(), Student::getFirstName, Collectors.toCollection(HashSet::new));
     }
 
@@ -66,6 +68,7 @@ public class StudentDB implements StudentQuery {
 
     @Override
     public List<Student> findStudentsByFirstName(Collection<Student> students, String firstName) {
+        // :NOTE: copy paste
         return filterCollection(students.stream(), x -> x.getFirstName().equals(firstName), Collectors.toList());
     }
 

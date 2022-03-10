@@ -19,7 +19,7 @@ public class StudentDB implements StudentQuery {
             thenComparing(Student::getFirstName, Comparator.reverseOrder()).
             thenComparing(ID_COMPARATOR);
 
-    //==========================================================//
+    //==================================================================================//
 
     @Override
     public List<String> getFirstNames(List<Student> students) {
@@ -100,12 +100,13 @@ public class StudentDB implements StudentQuery {
         return studentStream.map(function).collect(collector);
     }
 
+    private <T> T sortCollection(Stream<Student> studentStream, Comparator<Student> comparator,  Collector<? super Student, ?, T> collector) {
+        return studentStream.sorted(comparator).collect(collector);
+    }
+
     private <T> T filterCollection(Stream<Student> studentStream, Predicate<? super Student> predicate, Collector<? super Student, ?, T> collector) {
         return studentStream.filter(predicate).sorted(NAME_COMPARATOR).collect(collector);
     }
 
-    private <T> T sortCollection(Stream<Student> studentStream, Comparator<Student> comparator,  Collector<? super Student, ?, T> collector) {
-        return studentStream.sorted(comparator).collect(collector);
-    }
 }
 

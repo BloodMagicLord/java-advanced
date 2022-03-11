@@ -7,7 +7,6 @@ import info.kgeorgiy.java.advanced.student.GroupName;
 import java.util.*;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -16,8 +15,11 @@ public class StudentDB implements StudentQuery {
 
     private static final Comparator<Student> ID_COMPARATOR = Student::compareTo;
     // :NOTE: double reverseOrder
-    private static final Comparator<Student> NAME_COMPARATOR = Comparator.comparing(Student::getLastName, Comparator.reverseOrder()).
-            thenComparing(Student::getFirstName, Comparator.reverseOrder()).
+    // :FIXED:
+    private static final Comparator<Student> NAME_COMPARATOR = Comparator.
+            comparing(Student::getLastName).
+            thenComparing(Student::getFirstName).
+            reversed().
             thenComparing(ID_COMPARATOR);
 
     //==================================================================================//
@@ -45,7 +47,8 @@ public class StudentDB implements StudentQuery {
     @Override
     public Set<String> getDistinctFirstNames(List<Student> students) {
         // :NOTE: order
-        return buildCollection(students.stream(), Student::getFirstName, Collectors.toCollection(HashSet::new));
+        // :FIXED:
+        return buildCollection(students.stream(), Student::getFirstName, Collectors.toCollection(TreeSet::new));
     }
 
     //==========================================================//
@@ -69,22 +72,26 @@ public class StudentDB implements StudentQuery {
     @Override
     public List<Student> findStudentsByFirstName(Collection<Student> students, String firstName) {
         // :NOTE: copy paste
-        return filterCollection(students.stream(), x -> x.getFirstName().equals(firstName), Collectors.toList());
+        // :FIXED:
+        return filterCollection(students.stream(), Student::getFirstName, firstName, Collectors.toList());
     }
 
     @Override
     public List<Student> findStudentsByLastName(Collection<Student> students, String lastName) {
-        return filterCollection(students.stream(), x -> x.getLastName().equals(lastName), Collectors.toList());
+        return filterCollection(students.stream(), Student::getLastName, lastName, Collectors.toList());
     }
 
     @Override
     public List<Student> findStudentsByGroup(Collection<Student> students, GroupName group) {
-        return filterCollection(students.stream(), x -> x.getGroup().equals(group), Collectors.toList());
+        return filterCollection(students.stream(), Student::getGroup, group, Collectors.toList());
     }
 
     @Override
     public Map<String, String> findStudentNamesByGroup(Collection<Student> students, GroupName group) {
-        return filterCollection(students.stream(), x -> x.getGroup().equals(group),
+        return filterCollection(
+                students.stream(),
+                Student::getGroup,
+                group,
                 Collectors.toMap(Student::getLastName, Student::getFirstName, BinaryOperator.minBy(String::compareTo)));
     }
 
@@ -107,8 +114,8 @@ public class StudentDB implements StudentQuery {
         return studentStream.sorted(comparator).collect(collector);
     }
 
-    private <T> T filterCollection(Stream<Student> studentStream, Predicate<? super Student> predicate, Collector<? super Student, ?, T> collector) {
-        return studentStream.filter(predicate).sorted(NAME_COMPARATOR).collect(collector);
+    private <S, T> T filterCollection(Stream<Student> studentStream, Function<Student, S> function, S value, Collector<? super Student, ?, T> collector) {
+        return studentStream.filter(x -> function.apply(x).equals(value)).sorted(NAME_COMPARATOR).collect(collector);
     }
 
 }

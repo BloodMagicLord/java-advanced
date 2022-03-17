@@ -7,6 +7,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -38,6 +39,8 @@ public class Implementor implements Impler {
         // check if we can implement given class
         if (token.isPrimitive()) {
             throw new ImplerException("Error: cannot implement primitive.");
+        } else if (Modifier.isPrivate(token.getModifiers())) {
+            throw new ImplerException("Error: cannot implement private interfaces.");
         }
         // package and file name
         Path packagePath, filePath;

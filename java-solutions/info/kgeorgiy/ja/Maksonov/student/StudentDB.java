@@ -106,6 +106,7 @@ public class StudentDB implements StudentQuery {
         return student.getFirstName() + " " + student.getLastName();
     }
 
+    // :NOTE: (Collection<*> as a first arg)
     private <S, T extends Collection<S> > T buildCollection(Stream<Student> studentStream, Function<? super Student, ? extends S> function, Collector<? super S, ?, T> collector) {
         return studentStream.map(function).collect(collector);
     }

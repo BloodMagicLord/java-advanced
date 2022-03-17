@@ -1,4 +1,4 @@
-package info.kgeorgiy.ja.advanced.Maksonov.implementor;
+package info.kgeorgiy.ja.Maksonov.implementor;
 
 import info.kgeorgiy.java.advanced.implementor.Impler;
 import info.kgeorgiy.java.advanced.implementor.ImplerException;

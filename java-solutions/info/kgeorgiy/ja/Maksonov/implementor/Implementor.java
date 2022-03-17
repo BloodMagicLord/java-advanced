@@ -16,9 +16,9 @@ import java.nio.file.Path;
 
 public class Implementor implements Impler {
 
-    private final String ENTER = System.lineSeparator();
-    private final String DOUBLE_ENTER = ENTER + ENTER;
-    private final String TAB = "\t";
+    private final static String ENTER = System.lineSeparator();
+    private final static String DOUBLE_ENTER = ENTER + ENTER;
+    private final static String TAB = "\t";
 
     //===================================================================//
 

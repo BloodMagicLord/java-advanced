@@ -13,7 +13,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class Implementor implements Impler {
 
@@ -21,18 +20,7 @@ public class Implementor implements Impler {
     private final String DOUBLE_ENTER = ENTER + ENTER;
     private final String TAB = "\t";
 
-    public static void main(String[] args) {
-        Implementor implementor = new Implementor();
-        if (args == null || args.length != 2 || args[0] == null || args[1] == null) {
-            System.err.println("Error: invalid arguments. Expected: <class> <path>.");
-            return;
-        }
-        try {
-            implementor.implement(Class.forName(args[0]), Paths.get(args[1]));
-        } catch (ImplerException | ClassNotFoundException e) {
-            System.err.println(e.getMessage());
-        }
-    }
+    //===================================================================//
 
     @Override
     public void implement(Class<?> token, Path root) throws ImplerException {
@@ -81,44 +69,39 @@ public class Implementor implements Impler {
         // body: methods
         Method[] methods = token.getMethods();
         for (Method method : methods) {
-            stringBuilder.
-                    append(buildMethod(method)).
-                    append(DOUBLE_ENTER);
+            buildMethod(method, stringBuilder);
+            stringBuilder.append(DOUBLE_ENTER);
         }
         // tail: closing class
         stringBuilder.append("}");
         return stringBuilder.toString();
     }
 
-    //===================================================================//
-
-    private String buildMethod(Method method) {
-        StringBuilder stringBuilder = new StringBuilder();
+    private void buildMethod(Method method, StringBuilder stringBuilder) {
         //header: return type, name, parameters, exceptions
         stringBuilder.
                 append(TAB).
                 append("public ").
                 append(method.getReturnType().getCanonicalName()).
                 append(" ").
-                append(method.getName()).
-                append(buildMethodParameters(method.getParameters())).
-                append(buildMethodThrows(method.getExceptionTypes())).
+                append(method.getName());
+        buildMethodParameters(method.getParameters(), stringBuilder);
+        buildMethodThrows(method.getExceptionTypes(), stringBuilder);
+        stringBuilder.
                 append("{").
                 append(ENTER);
         //body: return with default return type value
-        stringBuilder.
-                append(TAB + TAB).
-                append(buildMethodBody(method.getReturnType())).
-                append(ENTER);
+        stringBuilder.append(TAB).append(TAB);
+        buildMethodBody(method.getReturnType(), stringBuilder);
+        stringBuilder.append(ENTER);
         //tail: closing method
         stringBuilder.
                 append(TAB).
                 append("}");
-        return stringBuilder.toString();
     }
 
-    private String buildMethodParameters(Parameter[] parameters) {
-        StringBuilder stringBuilder = new StringBuilder("(");
+    private void buildMethodParameters(Parameter[] parameters, StringBuilder stringBuilder) {
+        stringBuilder.append("(");
         int nom = 0;
         for (Parameter parameter : parameters) {
             stringBuilder.append(parameter.getType().getCanonicalName()).append(" ").append(parameter.getName());
@@ -127,14 +110,14 @@ public class Implementor implements Impler {
             }
             nom++;
         }
-        return stringBuilder.append(") ").toString();
+        stringBuilder.append(") ");
     }
 
-    private String buildMethodThrows(Class<?>[] exceptionTypes) {
+    private void buildMethodThrows(Class<?>[] exceptionTypes, StringBuilder stringBuilder) {
         if (exceptionTypes.length == 0) {
-            return "";
+            return;
         }
-        StringBuilder stringBuilder = new StringBuilder("throws ");
+        stringBuilder.append("throws ");
         int nom = 0;
         for (Class<?> exception : exceptionTypes) {
             stringBuilder.append(exception.getName());
@@ -143,11 +126,11 @@ public class Implementor implements Impler {
             }
             nom++;
         }
-        return stringBuilder.append(" ").toString();
+        stringBuilder.append(" ");
     }
 
-    private String buildMethodBody(Class<?> returnType) {
-        StringBuilder stringBuilder = new StringBuilder("return");
+    private void buildMethodBody(Class<?> returnType, StringBuilder stringBuilder) {
+        stringBuilder.append("return");
         String returnValue = "";
         if (returnType.isPrimitive()) {
             if (returnType.equals(Boolean.TYPE)) {
@@ -158,6 +141,6 @@ public class Implementor implements Impler {
         } else {
             returnValue = " null";
         }
-        return stringBuilder.append(returnValue).append(";").toString();
+        stringBuilder.append(returnValue).append(";");
     }
 }

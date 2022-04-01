@@ -64,6 +64,7 @@ public class IterativeParallelism implements ScalarIP {
      */
     @Override
     public <T> boolean all(final int threads, final List<? extends T> values, final Predicate<? super T> predicate) throws InterruptedException {
+        // :NOTE: Похоже на any
         return applyFunction(threads, values, x -> x.allMatch(predicate), x -> x.allMatch(y -> y == true));
     }
 
@@ -101,6 +102,7 @@ public class IterativeParallelism implements ScalarIP {
      */
     private  <T, R> R applyFunction(final int threads, final List<? extends T> values, final Function<Stream<? extends T>, R> functionForValues, final Function<Stream<? extends R>, R> functionForResult) throws InterruptedException {
         int threadsCol = Math.min(threads, values.size());
+        // :NOTE: Лишний поток для пустого списка
         threadsCol = Math.max(1, threadsCol);
         final List<Thread> threadList = new ArrayList<>();
         final List<R> newValues = new ArrayList<>();
@@ -110,6 +112,8 @@ public class IterativeParallelism implements ScalarIP {
         int left, right = 0;
         final int elementsPerThread = values.size() / threadsCol;
         final int extra = values.size() % threadsCol;
+
+        // :NOTE: Упростить и убрать
         final int[] threadsSizes = new int[threadsCol];
         for (int i = 0; i < threadsCol; i++) {
             threadsSizes[i] = elementsPerThread;
@@ -118,8 +122,9 @@ public class IterativeParallelism implements ScalarIP {
             }
         }
 
+        // :NOTE: Упростить
         for (int i = 0; i < threadsCol; i++) {
-            final int finalI = i;
+            final int finalI = i; // :NOTE: IntStream
             left = right;
             right = left + threadsSizes[i];
             final List<? extends T> subList = values.subList(left, right);
@@ -135,6 +140,7 @@ public class IterativeParallelism implements ScalarIP {
             try {
                 thread.join();
             } catch (final InterruptedException e) {
+                // :NOTE: Бесполезно
                 throw new InterruptedException("Error: error while working with threads: " + e.getMessage());
             }
         }

@@ -1,5 +1,11 @@
-#jar cf hm5.jar ../java-solutions/info/kgeorgiy/ja/Maksonov/implementor/Implementor.java ../../java-advanced-2022/info/kgeorgiy/java/advanced/implementor/Impler.java ../../java-advanced-2022/kgeorgiy/java/advanced/implementor/JarImpler.java ../../java-advanced-2022/info/kgeorgiy/java/advanced/implementor/ImplerException.java
+#!/bin/bash
+path=info/kgeorgiy/java/advanced/implementor
 
-jar cf hm5.jar ../MANIFEST.MF ../java-solutions/info/kgeorgiy/ja/Maksonov/implementor/Implementor.class \
-../$path/Impler.class ../$path/JarImpler.class ../$path/ImplerException.class
+jar xf ../../java-advanced-2022/artifacts/info.kgeorgiy.java.advanced.implementor.jar $path/Impler.class $path/JarImpler.class $path/ImplerException.class
+
+javac -d out --module-path ../../java-advanced-2021/artifacts ../java-solutions/info/kgeorgiy/ja/Maksonov/implementor/Implementor.java
+
+cd ./out
+
+jar cfm Implementor.jar ../MANIFEST.MF info/kgeorgiy/ja/Maksonov/implementor/Implementor.class ../$path/Impler.class ../$path/JarImpler.class ../$path/ImplerException.class
 

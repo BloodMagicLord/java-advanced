@@ -16,6 +16,7 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.jar.Attributes;
@@ -39,36 +40,36 @@ public class Implementor implements Impler, JarImpler {
     private static final String CLASS_EXTENSION = ".class";
     private static final String JAR_EXTENSION = ".jar";
 
-    private static final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+    private static final JavaCompiler COMPILER = ToolProvider.getSystemJavaCompiler();
 
     //===================================================================//
 
     /**
      * Runs implemeting alrorithms with given {@code args}.
      * <p>
-     * Runs {@code implementJar()} if {@code args} can be applied as "-jar <class> <path>".
-     * Runs {@code implement()} if  {@code args} can be applied as "<class> <path>".
+     * Runs {@code implementJar()} if {@code args} can be applied as "-jar class path".
+     * Runs {@code implement()} if  {@code args} can be applied as "class path".
+     * Otherwise, saying why arguments is invalid
      *
      * @param args arguments for running from terminal.
      */
     public static void main(String[] args) {
-        final String errorMessage = "Error: class argument is invalid. Expected [-jar] <class> <path>.";
+        final String expectedArgs = "Expected [-jar] <class> <path>.";
         Implementor implementor = new Implementor();
-        if (args == null) {
-            System.err.println(errorMessage);
-            return;
-        }
 
         try {
-            if (args.length == 2) {
-                implementor.implement(Class.forName(args[0]), Paths.get(args[1]));
-            } else if (args.length == 3 && args[0].equals("-jar")) {
-                implementor.implementJar(Class.forName(args[1]), Paths.get(args[2]));
-            } else {
-                System.err.println(errorMessage);
+            if (args != null) {
+                if (args.length == 2) {
+                    implementor.implement(Class.forName(args[0]), Paths.get(args[1]));
+                } else if (args.length == 3 && args[0].equals("-jar")) {
+                    implementor.implementJar(Class.forName(args[1]), Paths.get(args[2]));
+                }
             }
-        } catch (ClassNotFoundException | InvalidPathException e) {
-            System.err.println(errorMessage);
+            System.err.println("Error: invalid foramt of args. " + expectedArgs);
+        } catch (ClassNotFoundException e) {
+            System.err.println("Error: invalid class argument. " + expectedArgs);
+        } catch (InvalidPathException e) {
+            System.err.println("Error: invalid path argument. " + expectedArgs);
         } catch (ImplerException e) {
             System.err.println(e.getMessage());
         }
@@ -82,7 +83,8 @@ public class Implementor implements Impler, JarImpler {
      * @throws ImplerException if {@param token} is private or primitive.
      *                         if {@param root} is invalid.
      *                         if any other error occurred.
-     * @see Class
+     * @see java.lang.Class
+     * @see java.nio.file.Path
      */
     @Override
     public void implement(Class<?> token, Path root) throws ImplerException {
@@ -115,21 +117,23 @@ public class Implementor implements Impler, JarImpler {
     }
 
     /**
-     * Implement {@code token} and save it to {@code jarFile} as .jar file.
+     * Implement {@code token} and save it to {@code jarFile} as <var>.jar</var> file.
      * <p>
-     * Generated class classes name will be same as classes name of the type token with <var>Impl</var> suffix
-     * added.
+     * Generated class name will be same as classes name of the type token with <var>Impl</var> suffix added.
      *
      * @param token type token to create implementation for.
      * @param jarFile target <var>.jar</var> file.
      * @throws ImplerException if error occures while implementing.
      *                         if something gone wrong while working with files.
+     *
+     * @see java.lang.Class
+     * @see java.nio.file.Path
      */
     @Override
     public void implementJar(Class<?> token, Path jarFile) throws ImplerException {
         //preparing before creating
-        if (compiler == null) {
-            throw new ImplerException("Error: compiler was not found.");
+        if (COMPILER == null) {
+            throw new ImplerException("Error: compiler not found.");
         }
 
         //creating temporary directory
@@ -162,9 +166,9 @@ public class Implementor implements Impler, JarImpler {
         }
 
         // compiling
-        System.out.println(className + "\n" + pathJavaFile + "\n" + classPathString);
+        //System.out.println(className + "\n" + pathJavaFile + "\n" + classPathString);
         String[] args = {"-cp", classPathString, pathJavaFile, "-encoding", ENCODING_STRING};
-        if (compiler.run(null, null, null, args) != 0) {
+        if (COMPILER.run(null, null, null, args) != 0) {
             throw new ImplerException("Error: compile error.");
         }
 
@@ -194,11 +198,13 @@ public class Implementor implements Impler, JarImpler {
     /**
      * Returns true if {@code file} was deleted succesfully. False otherwise.
      * <p>
-     * If {@code file} is directory, deletes all content in it and directory itself.
+     * If {@code file} is directory, deletes this directory recursivly with all content in it.
      * Otherwise, deletes single file {@code file}.
      *
      * @param file File or directory to delete.
      * @return true if {@code file} was deleted succesfully, false otherwise.
+     *
+     * @see java.io.File
      */
     private boolean recursiveDelete(File file) {
         File[] content = file.listFiles();
@@ -215,7 +221,8 @@ public class Implementor implements Impler, JarImpler {
      *
      * @param token class to implement.
      * @return String with {@param token} realization.
-     * @see Class
+     *
+     * @see java.lang.Class
      */
     private String buildClass(Class<?> token) {
         StringBuilder stringBuilder = new StringBuilder();
@@ -250,7 +257,9 @@ public class Implementor implements Impler, JarImpler {
      *
      * @param method method to build
      * @param stringBuilder java.lang.StringBuilder in which should return statement be appended
-     * @see Method
+     *
+     * @see java.lang.reflect.Method
+     * @see java.lang.StringBuilder
      */
     private void buildMethod(Method method, StringBuilder stringBuilder) {
         //header: return type, name, parameters, exceptions
@@ -277,11 +286,14 @@ public class Implementor implements Impler, JarImpler {
 
     /**
      * Appends to the {@code stringBuilder} all parameters divided by "," in "()".
+     * <p>
      * If {@code parameters} is empty, appends only "()".
      *
      * @param parameters all parameters of the method
      * @param stringBuilder java.lang.StringBuilder in which should return statement be appended
-     * @see Parameter
+     *
+     * @see java.lang.reflect.Parameter
+     * @see java.lang.StringBuilder
      */
     private void buildMethodParameters(Parameter[] parameters, StringBuilder stringBuilder) {
         stringBuilder.append("(");
@@ -298,11 +310,14 @@ public class Implementor implements Impler, JarImpler {
 
     /**
      * Appends to the {@code stringBuilder} "throws " + all exceptions from {@code exceptionTypes} + " ".
+     * <p>
      * If {@code exceptionTypes} is empty, nothing happens.
      *
      * @param exceptionTypes all exception for the method
      * @param stringBuilder java.lang.StringBuilder in which should return statement be appended
-     * @see Class
+     *
+     * @see java.lang.Class
+     * @see java.lang.StringBuilder
      */
     private void buildMethodThrows(Class<?>[] exceptionTypes, StringBuilder stringBuilder) {
         if (exceptionTypes.length == 0) {
@@ -324,7 +339,9 @@ public class Implementor implements Impler, JarImpler {
      *
      * @param returnType return type of the method.
      * @param stringBuilder java.lang.StringBuilder in which should return statement be appended.
-     * @see Class
+     *
+     * @see java.lang.Class
+     * @see java.lang.StringBuilder
      */
     private void buildMethodBody(Class<?> returnType, StringBuilder stringBuilder) {
         stringBuilder.append("return");
@@ -341,10 +358,23 @@ public class Implementor implements Impler, JarImpler {
         stringBuilder.append(returnValue).append(";");
     }
 
+    /**
+     * Concat two strings: {@code simpleName} and "Impl"
+     *
+     * @param simpleName simple name of class
+     * @return name of file + "Impl"
+     */
     private String buildFileName(String simpleName) {
         return simpleName + "Impl";
     }
 
+    /**
+     * Replaces all '.' in {@code packageName} on {@link Implementor#FILE_SEPARATOR_CHAR}.
+     *
+     * @param packageName name of package where '.' should be replaced
+     * @return result string
+     *
+     */
     private String buildPackageName(String packageName) {
         return packageName.replace('.', FILE_SEPARATOR_CHAR);
     }

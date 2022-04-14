@@ -1,0 +1,1 @@
+javadoc -private -author -version -d ../javadoc ../java-solutions/info/kgeorgiy/ja/Maksonov/implementor/Implementor.java ../java-solutions/info/kgeorgiy/java/advanced/implementor/Impler.java ../java-solutions/info/kgeorgiy/java/advanced/implementor/JarImpler.java ../java-solutions/info/kgeorgiy/java/advanced/implementor/ImplerException.java

@@ -23,6 +23,7 @@ public class ParallelMapperImpl implements ParallelMapper {
         if (threads <= 0) {
             throw new IllegalArgumentException("Error: number of threads must be 1 or greater.");
         }
+        // :NOTE: лишний this.
         this.threads = new ArrayList<>();
         problems = new ArrayDeque<>();
         for (int i = 0; i < threads; i++) {
@@ -59,6 +60,7 @@ public class ParallelMapperImpl implements ParallelMapper {
     public <T, R> List<R> map(Function<? super T, ? extends R> f, List<? extends T> args) throws InterruptedException {
         final SmartCounter counter = new SmartCounter();
         final List<R> results = new ArrayList<>();
+        // :NOTE: nCopy
         for (int i = 0; i < args.size(); i++) {
             results.add(null);
         }
@@ -66,6 +68,7 @@ public class ParallelMapperImpl implements ParallelMapper {
                 .forEach(i -> addProblem(
                         () -> {
                             results.set(i, f.apply(args.get(i)));
+                            // :NOTE: возможно было бы лучше сделать synchronized
                             synchronized (counter) {
                                 counter.add();
                                 if (counter.get() == args.size()) {
@@ -106,6 +109,7 @@ public class ParallelMapperImpl implements ParallelMapper {
     private void addProblem(Runnable problem) {
         synchronized (problems) {
             problems.add(problem);
+            // :NOTE: notifyAll
             problems.notify();
         }
     }

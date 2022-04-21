@@ -1,6 +1,7 @@
 package info.kgeorgiy.ja.Maksonov.concurrent;
 
 import info.kgeorgiy.java.advanced.concurrent.ScalarIP;
+import info.kgeorgiy.java.advanced.mapper.ParallelMapper;
 
 
 import java.util.*;
@@ -10,6 +11,16 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class IterativeParallelism implements ScalarIP {
+    private final ParallelMapper parallelMapper;
+
+    @SuppressWarnings("unused")
+    public IterativeParallelism() {
+        this.parallelMapper = null;
+    }
+
+    public IterativeParallelism(ParallelMapper parallelMapper) {
+        this.parallelMapper = parallelMapper;
+    }
 
     /**
      * Returns maximum value.
@@ -22,12 +33,10 @@ public class IterativeParallelism implements ScalarIP {
      * @return maximum of given values
      *
      * @throws InterruptedException if executing thread was interrupted.
-     * @throws java.util.NoSuchElementException if no values are given.
+     * @throws NoSuchElementException if no values are given.
      */
     @Override
     public <T> T maximum(final int threads, final List<? extends T> values, final Comparator<? super T> comparator) throws InterruptedException {
-        // :NOTE: Похоже на minimum
-        // :FIXED:
         return minimum(threads, values, Collections.reverseOrder(comparator));
     }
 
@@ -42,11 +51,11 @@ public class IterativeParallelism implements ScalarIP {
      * @return minimum of given values
      *
      * @throws InterruptedException if executing thread was interrupted.
-     * @throws java.util.NoSuchElementException if no values are given.
+     * @throws NoSuchElementException if no values are given.
      */
     @Override
     public <T> T minimum(final int threads, final List<? extends T> values, final Comparator<? super T> comparator) throws InterruptedException {
-        return applyFunction(threads, values, x -> x.min(comparator).orElseThrow(NoSuchElementException::new), x -> x.min(comparator).orElseThrow(NoSuchElementException::new));
+        return applyFunction(threads, values, x -> x.stream().min(comparator).orElseThrow(NumberFormatException::new), x -> x.min(comparator).orElseThrow(NoSuchElementException::new));
     }
 
     /**
@@ -63,8 +72,6 @@ public class IterativeParallelism implements ScalarIP {
      */
     @Override
     public <T> boolean all(final int threads, final List<? extends T> values, final Predicate<? super T> predicate) throws InterruptedException {
-        // :NOTE: Похоже на any
-        // :FIXED:
         return !any(threads, values, predicate.negate());
     }
 
@@ -82,7 +89,7 @@ public class IterativeParallelism implements ScalarIP {
      */
     @Override
     public <T> boolean any(final int threads, final List<? extends T> values, final Predicate<? super T> predicate) throws InterruptedException {
-        return Boolean.TRUE.equals(applyFunction(threads, values, x -> x.anyMatch(predicate), x -> x.anyMatch(y -> y == true)));
+        return Boolean.TRUE.equals(applyFunction(threads, values, x -> x.stream().anyMatch(predicate), x -> x.anyMatch(y -> y == true)));
     }
 
     //=========================================================================//
@@ -94,6 +101,7 @@ public class IterativeParallelism implements ScalarIP {
      * Applying {@code functionForValues} on {@code values} to get list of {@code <R>} values
      * and then applying {@code functionForResult} to get single value as answer.
      *
+     * If {@link IterativeParallelism#parallelMapper} is not null, new threads won't be created.
      * If {@code value} is empty, returns null.
      *
      * @param threads col of threads that can be used, must be 0 or greater
@@ -106,66 +114,65 @@ public class IterativeParallelism implements ScalarIP {
      * @throws IllegalArgumentException when {@code threads} is less then 0.
      * @throws InterruptedException when something gone wrong while working with threads.
      */
-    private  <T, R> R applyFunction(final int threads, final List<? extends T> values, final Function<Stream<? extends T>, R> functionForValues, final Function<Stream<? extends R>, R> functionForResult) throws InterruptedException {
-
-        // :NOTE: Лишний поток для пустого списка
-        // :FIXED:
-        if (threads < 0) {
-            throw new IllegalArgumentException("Error: number of threads must be 0 or greater.");
+    private  <T, R> R applyFunction(final int threads, final List<? extends T> values, final Function<List<? extends T>, R> functionForValues, final Function<Stream<? extends R>, R> functionForResult) throws InterruptedException {
+        if (threads <= 0) {
+            throw new IllegalArgumentException("Error: number of threads must be 1 or greater.");
         }
         if (values.size() == 0) {
             return null;
         }
         int threadsCol = Math.min(threads, values.size());
-        if (threadsCol > 0) {
-            final List<Thread> threadList = new ArrayList<>();
-            final List<R> newValues = new ArrayList<>();
-            for (int i = 0; i < threadsCol; i++) {
-                newValues.add(null);
-            }
-            final int elementsPerThread = values.size() / threadsCol;
-            final int extra = values.size() % threadsCol;
 
-            // :NOTE: Упростить
-            // :FIXED:
-            //:NOTE: IntStream
-            // :FIXED:
-            IntStream
-                    .range(0, threadsCol)
-                    .forEach(i -> {
-                        final List<? extends T> subList = values.subList(
-                                i * elementsPerThread + Math.min(i, extra)
-                                , (i + 1) * elementsPerThread + Math.min(i + 1, extra)
-                        );
-                        final Thread thread = new Thread(
-                                () -> newValues.set(i, functionForValues.apply(subList.stream()))
-                        );
-                        threadList.add(thread);
-                        thread.start();
-                    });
+        List<List<? extends T>> subLists = new ArrayList<>();
+        final int elementsPerThread = values.size() / threadsCol;
+        final int extra = values.size() % threadsCol;
+        IntStream
+                .range(0, threadsCol)
+                .forEach(i -> {
+                    final List<? extends T> subList = values.subList(
+                            i * elementsPerThread + Math.min(i, extra)
+                            , (i + 1) * elementsPerThread + Math.min(i + 1, extra)
+                    );
+                    subLists.add(subList);
+                });
 
-            Exception exception = null;
-            for (final Thread thread : threadList) {
-                try {
-                    thread.join();
-                } catch (final InterruptedException e) {
-                    // :NOTE: Бесполезно
-                    // :FIXED:
-                    if (exception == null) {
-                        exception = e;
-                    } else {
-                        exception.addSuppressed(e);
-                    }
+        if (parallelMapper != null) {
+            return functionForResult.apply(parallelMapper.map(functionForValues, subLists).stream());
+        }
+        // else
+        final List<Thread> threadList = new ArrayList<>();
+        final List<R> newValues = new ArrayList<>();
+
+        for (int i = 0; i < threadsCol; i++) {
+            newValues.add(null);
+        }
+        IntStream
+                .range(0, threadsCol)
+                .forEach(i -> {
+                    final Thread thread = new Thread(
+                            () -> newValues.set(i, functionForValues.apply(subLists.get(i)))
+                    );
+                    threadList.add(thread);
+                    thread.start();
+                });
+
+        Exception exception = null;
+        for (final Thread thread : threadList) {
+            try {
+                thread.join();
+            } catch (final InterruptedException e) {
+                if (exception == null) {
+                    exception = e;
+                } else {
+                    exception.addSuppressed(e);
                 }
             }
-
-            if (exception != null) {
-                throw new InterruptedException("Error: error while working with threads. " + exception);
-            }
-            return functionForResult.apply(newValues.stream());
         }
-        final List<R> newValues = new ArrayList<>();
-        newValues.add(functionForValues.apply(values.stream()));
+
+        if (exception != null) {
+            throw new InterruptedException("Error: error while working with threads. " + exception);
+        }
+
         return functionForResult.apply(newValues.stream());
     }
 }

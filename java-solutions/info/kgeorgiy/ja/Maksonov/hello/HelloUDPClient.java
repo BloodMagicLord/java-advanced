@@ -12,6 +12,7 @@ import java.util.stream.IntStream;
 
 public class HelloUDPClient implements HelloClient {
     private static final int TIMEOUT = 100;
+    // :NOTE: не стоит использовать константный размер
     private static final int SIZE = 1024;
     private static final Charset UTF_8 = StandardCharsets.UTF_8;
     private static final String expectedArgs = "Expected <host> <port> <prefix> <threads> <requests>.";
@@ -60,6 +61,7 @@ public class HelloUDPClient implements HelloClient {
 
         try {
             InetAddress inetAddress = InetAddress.getByName(host);
+            // :NOTE: Thread
             List<Thread> threadList = new ArrayList<>();
 
             IntStream

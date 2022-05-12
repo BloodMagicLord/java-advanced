@@ -4,16 +4,16 @@ import info.kgeorgiy.java.advanced.hello.HelloClient;
 
 import java.io.IOException;
 import java.net.*;
-import java.nio.charset.*;
-import java.util.List;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-
+import java.util.List;
 import java.util.stream.IntStream;
 
 public class HelloUDPClient implements HelloClient {
     private static final int TIMEOUT = 100;
     // :NOTE: не стоит использовать константный размер
-    private static final int SIZE = 1024;
+    // :FIXED:
     private static final Charset UTF_8 = StandardCharsets.UTF_8;
     private static final String expectedArgs = "Expected <host> <port> <prefix> <threads> <requests>.";
 
@@ -62,45 +62,24 @@ public class HelloUDPClient implements HelloClient {
         try {
             InetAddress inetAddress = InetAddress.getByName(host);
             // :NOTE: Thread
+            // :FIXED:
             List<Thread> threadList = new ArrayList<>();
-
-            IntStream
-                    .range(0, threads)
-                    .forEach(i -> {
-                        final Thread thread = new Thread(() -> {
-                            try (DatagramSocket socket = new DatagramSocket()) {
-                                socket.setSoTimeout(TIMEOUT);
-                                IntStream
-                                        .range(0, requests)
-                                        .forEach(j -> {
-                                            String requestMessage = prefix + i + "_" + j;
-                                            String responseMessage = "";
-                                            String expectedResponseMessage = "Hello, " + requestMessage;
-                                            byte[] bytes = requestMessage.getBytes(UTF_8);
-                                            DatagramPacket request = new DatagramPacket(bytes, bytes.length, inetAddress, port);
-
-                                            while (!responseMessage.equals(expectedResponseMessage)) {
-                                                try {
-                                                    socket.send(request);
-                                                    DatagramPacket response = new DatagramPacket(new byte[SIZE], SIZE);
-                                                    socket.receive(response);
-                                                    responseMessage = new String(response.getData(), response.getOffset(), response.getLength());
-                                                } catch (SocketTimeoutException e) {
-                                                    System.err.println("Error: socket timed out. " + e);
-                                                } catch (IOException e) {
-                                                    System.err.println("Error: something gone wrong while sending. " + e);
-                                                }
-                                            }
-
-                                            System.out.println(requestMessage + " " + responseMessage);
-                                        });
-                            } catch (SocketException e) {
-                                System.err.println("Error: cannot open socket. " + e);
-                            }
+            IntStream.range(0, threads).forEach(i -> {
+                final Runnable runnable = () -> {
+                    try (DatagramSocket socket = new DatagramSocket()) {
+                        socket.setSoTimeout(TIMEOUT);
+                        IntStream.range(0, requests).forEach(j -> {
+                            final String requestMessage = prefix + i + "_" + j;
+                            sendAndReceive(socket, port, inetAddress, requestMessage);
                         });
-                        threadList.add(thread);
-                        thread.start();
-                    });
+                    } catch (SocketException e) {
+                        System.err.println("Error: cannot open socket. " + e);
+                    }
+                };
+                final Thread thread = new Thread(runnable);
+                threadList.add(thread);
+                thread.start();
+            });
 
             for (final Thread thread : threadList) {
                 try {
@@ -112,5 +91,38 @@ public class HelloUDPClient implements HelloClient {
         } catch (UnknownHostException e) {
             System.err.println("Error: cannot find host by name. " + e);
         }
+    }
+
+    //========================================================================//
+
+    /**
+     * Sends request and gets response using {@code socket}.
+     *
+     * @param socket socket
+     * @param port port
+     * @param inetAddress internet address
+     * @param requestMessage message for request
+     */
+    private static void sendAndReceive(DatagramSocket socket, int port, InetAddress inetAddress, String requestMessage) {
+        final String expectedResponseMessage = "Hello, " + requestMessage;
+        final int size = expectedResponseMessage.length();
+        String responseMessage = "";
+        byte[] bytes = requestMessage.getBytes(UTF_8);
+        DatagramPacket request = new DatagramPacket(bytes, bytes.length, inetAddress, port);
+
+        while (!responseMessage.equals(expectedResponseMessage)) {
+            try {
+                socket.send(request);
+                DatagramPacket response = new DatagramPacket(new byte[size], size);
+                socket.receive(response);
+                responseMessage = new String(response.getData(), response.getOffset(), response.getLength());
+            } catch (SocketTimeoutException e) {
+                System.err.println("Error: socket timed out. " + e);
+            } catch (IOException e) {
+                System.err.println("Error: something gone wrong while sending. " + e);
+            }
+        }
+
+        System.out.println(requestMessage + " " + responseMessage);
     }
 }

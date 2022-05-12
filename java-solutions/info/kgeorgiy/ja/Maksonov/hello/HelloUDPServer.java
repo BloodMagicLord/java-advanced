@@ -1,7 +1,6 @@
 package info.kgeorgiy.ja.Maksonov.hello;
 
 import info.kgeorgiy.java.advanced.hello.HelloServer;
-
 import java.io.IOException;
 
 import java.net.*;
@@ -12,7 +11,6 @@ import java.util.stream.IntStream;
 
 public class HelloUDPServer implements HelloServer {
     private static final int TIMEOUT = 100;
-    private static final int SIZE = 1024;
     private static final Charset UTF_8 = StandardCharsets.UTF_8;
 
     private static final String expectedArgs = "Expected <port> <threads>.";
@@ -63,31 +61,30 @@ public class HelloUDPServer implements HelloServer {
             isStarted = true;
             socket.setSoTimeout(TIMEOUT);
 
-            IntStream
-                    .range(0, threads)
-                    .forEach(i -> {
-                        final Thread thread = new Thread(() -> {
-                            try {
-                                while (!socket.isClosed()) {
-                                    DatagramPacket request = new DatagramPacket(new byte[SIZE], SIZE);
-                                    socket.receive(request);
+            IntStream.range(0, threads).forEach(i -> {
+                final Thread thread = new Thread(() -> {
+                    try {
+                        while (!socket.isClosed()) {
+                            final int size = socket.getReceiveBufferSize();
+                            DatagramPacket request = new DatagramPacket(new byte[size], size);
+                            socket.receive(request);
 
-                                    String responseMessage = "Hello, " + new String(request.getData(), request.getOffset(), request.getLength());
-                                    byte[] bytes = responseMessage.getBytes(UTF_8);
-                                    DatagramPacket response = new DatagramPacket(bytes, bytes.length, request.getAddress(), request.getPort());
+                            String responseMessage = "Hello, " + new String(request.getData(), request.getOffset(), request.getLength());
+                            byte[] bytes = responseMessage.getBytes(UTF_8);
+                            DatagramPacket response = new DatagramPacket(bytes, bytes.length, request.getAddress(), request.getPort());
 
-                                    socket.send(response);
-                                }
-                            } catch (SocketTimeoutException e) {
-                                System.err.println("Error: socket timed out. " + e);
-                            } catch (IOException e) {
-                                System.err.println("Error: something gone wrong while sending. " + e);
-                            }
-                        });
-                        
-                        threadList.add(thread);
-                        thread.start();
-                    });
+                            socket.send(response);
+                        }
+                    } catch (SocketTimeoutException e) {
+                        System.err.println("Error: socket timed out. " + e);
+                    } catch (IOException e) {
+                        System.err.println("Error: something gone wrong while sending. " + e);
+                    }
+                });
+
+                threadList.add(thread);
+                thread.start();
+            });
         } catch (SocketException e) {
             System.err.println("Error: cannot open socket. " + e);
         }

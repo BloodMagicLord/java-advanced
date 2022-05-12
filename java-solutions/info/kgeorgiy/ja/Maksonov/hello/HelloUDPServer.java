@@ -62,7 +62,7 @@ public class HelloUDPServer implements HelloServer {
             socket.setSoTimeout(TIMEOUT);
 
             IntStream.range(0, threads).forEach(i -> {
-                final Thread thread = new Thread(() -> {
+                final Runnable runnable = () -> {
                     try {
                         while (!socket.isClosed()) {
                             final int size = socket.getReceiveBufferSize();
@@ -80,8 +80,8 @@ public class HelloUDPServer implements HelloServer {
                     } catch (IOException e) {
                         System.err.println("Error: something gone wrong while sending. " + e);
                     }
-                });
-
+                };
+                final Thread thread = new Thread(runnable);
                 threadList.add(thread);
                 thread.start();
             });

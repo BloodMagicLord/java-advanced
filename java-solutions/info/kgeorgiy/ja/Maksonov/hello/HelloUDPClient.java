@@ -4,42 +4,28 @@ import info.kgeorgiy.java.advanced.hello.HelloClient;
 
 import java.io.IOException;
 import java.net.*;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 
+import static info.kgeorgiy.ja.Maksonov.hello.GeneralCode.*;
+
 public class HelloUDPClient implements HelloClient {
-    private static final int TIMEOUT = 100;
     // :NOTE: не стоит использовать константный размер
     // :FIXED:
-    private static final Charset UTF_8 = StandardCharsets.UTF_8;
-    private static final String expectedArgs = "Expected <host> <port> <prefix> <threads> <requests>.";
-
     /**
      * Runs HelloClient with given {@code args}.
      * <p>
      * @param args arguments for running from terminal.
      */
     public static void main(String[] args) {
-        if (args == null || args.length != 5) {
-            System.err.println("Error: invalid arguments. " + expectedArgs);
-            return;
-        }
-
         try {
             HelloClient client = new HelloUDPClient();
-
-            String host = args[0];
-            int port = Integer.parseInt(args[1]);
-            String prefix = args[2];
-            int threads = Integer.parseInt(args[3]);
-            int requests = Integer.parseInt(args[4]);
-
-            client.run(host, port, prefix, threads, requests);
+            launchClient(client, args);
         } catch (NumberFormatException e) {
-            System.out.println("Error: cannot convert arguments. " + expectedArgs);
+            System.out.println("Error: cannot convert arguments. " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            System.err.println("Error: invalid arguments. " + e.getMessage());
         }
     }
 
@@ -54,8 +40,7 @@ public class HelloUDPClient implements HelloClient {
      */
     @Override
     public void run(String host, int port, String prefix, int threads, int requests) {
-        if (threads <= 0) {
-            System.err.println("Error: number of threads must be 1 or greater.");
+        if (!validateThread(threads)) {
             return;
         }
 
@@ -69,7 +54,7 @@ public class HelloUDPClient implements HelloClient {
                     try (DatagramSocket socket = new DatagramSocket()) {
                         socket.setSoTimeout(TIMEOUT);
                         IntStream.range(0, requests).forEach(j -> {
-                            final String requestMessage = prefix + i + "_" + j;
+                            final String requestMessage = buildMessage(prefix, i, j);
                             sendAndReceive(socket, port, inetAddress, requestMessage);
                         });
                     } catch (SocketException e) {

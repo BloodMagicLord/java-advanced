@@ -1,19 +1,19 @@
 package info.kgeorgiy.ja.Maksonov.hello;
 
 import info.kgeorgiy.java.advanced.hello.HelloServer;
-import java.io.IOException;
 
-import java.net.*;
-import java.nio.charset.*;
-import java.util.List;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.IntStream;
 
-public class HelloUDPServer implements HelloServer {
-    private static final int TIMEOUT = 100;
-    private static final Charset UTF_8 = StandardCharsets.UTF_8;
+import static info.kgeorgiy.ja.Maksonov.hello.GeneralCode.*;
 
-    private static final String expectedArgs = "Expected <port> <threads>.";
+public class HelloUDPServer implements HelloServer {
     private static boolean isStarted = false;
     private static DatagramSocket socket;
     private static List<Thread> threadList;
@@ -24,21 +24,12 @@ public class HelloUDPServer implements HelloServer {
      * @param args arguments for running from terminal.
      */
     public static void main(String[] args) {
-        if (args == null || args.length != 2) {
-            System.err.println("Error: invalid arguments. " + expectedArgs);
-            return;
-        }
-
-        try {
-            try (HelloServer server = new HelloUDPServer()) {
-
-                int port = Integer.parseInt(args[0]);
-                int threads = Integer.parseInt(args[1]);
-
-                server.start(port, threads);
-            }
+        try (HelloServer server = new HelloUDPServer()) {
+            launchServer(server, args);
         } catch (NumberFormatException e) {
-            System.out.println("Error: cannot convert arguments. " + expectedArgs);
+            System.out.println("Error: cannot convert arguments. " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            System.err.println("Error: invalid arguments. " + e.getMessage());
         }
     }
 
@@ -69,7 +60,7 @@ public class HelloUDPServer implements HelloServer {
                             DatagramPacket request = new DatagramPacket(new byte[size], size);
                             socket.receive(request);
 
-                            String responseMessage = "Hello, " + new String(request.getData(), request.getOffset(), request.getLength());
+                            final String responseMessage = buildHelloMessage(new String(request.getData(), request.getOffset(), request.getLength()));
                             byte[] bytes = responseMessage.getBytes(UTF_8);
                             DatagramPacket response = new DatagramPacket(bytes, bytes.length, request.getAddress(), request.getPort());
 

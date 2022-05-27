@@ -81,6 +81,7 @@ public class HelloUDPNonblockingServer implements HelloServer {
         try {
             executorService.shutdown();
             executorService.awaitTermination(TIMEOUT, TimeUnit.MILLISECONDS);
+            // :NOTE: а если не завершимся за такой таймаут?
         } catch (InterruptedException ignored) {
             // nothing to do
         }

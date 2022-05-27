@@ -93,6 +93,7 @@ public class GeneralCode {
         return "Hello, " + message;
     }
 
+    // :NOTE: Boolean method 'validateThread' is always inverted
     public static boolean validateThread(int threads) {
         if (threads <= 0) {
             System.err.println("Error: number of threads must be 1 or greater.");

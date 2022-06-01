@@ -10,7 +10,6 @@ import java.nio.channels.DatagramChannel;
 import java.nio.channels.Selector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import static info.kgeorgiy.ja.Maksonov.hello.GeneralCode.*;
 
@@ -33,7 +32,7 @@ public class HelloUDPNonblockingServer implements HelloServer {
 
     @Override
     public void start(int port, int threads) {
-        if (!validateThread(threads)) {
+        if (validateThread(threads)) {
             return;
         }
 
@@ -77,14 +76,9 @@ public class HelloUDPNonblockingServer implements HelloServer {
         } catch (IOException e) {
             System.err.println("Error: cannot close channel." + e.getMessage());
         }
-
-        try {
-            executorService.shutdown();
-            executorService.awaitTermination(TIMEOUT, TimeUnit.MILLISECONDS);
-            // :NOTE: а если не завершимся за такой таймаут?
-        } catch (InterruptedException ignored) {
-            // nothing to do
-        }
+        // :NOTE: а если не завершимся за такой таймаут?
+        // :FIXED:
+        shutdownAndAwaitTermination(executorService);
     }
 
     //===================================================================//

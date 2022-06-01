@@ -6,8 +6,11 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Walk {
     private final static String DEFAULT_HASH = bytesToString(new byte[20]);
@@ -49,6 +52,27 @@ public class Walk {
         return bytesToString(hash);
     }
 
+    private static List<String> recursiveHash(Path path, String pathString) throws IOException {
+        final File file = new File(pathString);
+        final File[] files = file.listFiles();
+        List<String> hashes = new ArrayList<>();
+        final BasicFileAttributes basicFileAttributes = Files.readAttributes(path, BasicFileAttributes.class);
+        if (basicFileAttributes.isDirectory()) {
+            if (files != null) {
+                for (final File f : files) {
+                    hashes.addAll(recursiveHash(f.toPath(), f.getPath()));
+                }
+            }
+        } else if (basicFileAttributes.isRegularFile()) {
+            hashes.add(buildString(getHash(path, pathString), pathString));
+        }
+        return hashes;
+    }
+
+    private static String buildString(String hash, String path) {
+        return String.format("%s %s", hash, path);
+    }
+
     public static void main (String[] args) {
         if (args == null || args.length != 2 || args[0] == null || args[1] == null) {
             System.err.println("Invalid arguments. Expected 2 not-null arguments: <input file> <output file>.");
@@ -86,14 +110,17 @@ public class Walk {
                 while ((line = reader.readLine()) != null) {
                     try {
                         Path path = Paths.get(line);
-                        writer.write(String.format("%s %s", getHash(path, line), line));
+                        for (String hash : recursiveHash(path, line)) {
+                            writer.write(String.format("%s", hash));
+                            writer.newLine();
+                        }
                     } catch (IOException | InvalidPathException e) {
                         if (e instanceof IOException) {
                             System.err.println("Error while writing to file: " + line + " : " + e.getMessage());
                         }
-                        writer.write(String.format("%s %s", DEFAULT_HASH, line));
+                        writer.write(String.format("%s", buildString(DEFAULT_HASH, line)));
+                        writer.newLine();
                     }
-                    writer.newLine();
                 }
             } catch (IOException e) {
                 System.err.println("Cannot open output file error: " + e.getMessage());
@@ -103,4 +130,3 @@ public class Walk {
         }
     }
 }
-

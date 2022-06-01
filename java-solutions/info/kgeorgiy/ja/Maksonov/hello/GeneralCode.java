@@ -5,6 +5,7 @@ import info.kgeorgiy.java.advanced.hello.HelloServer;
 
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
@@ -13,9 +14,11 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class GeneralCode {
-    public static final int TIMEOUT = 25;
+    public static final int TIMEOUT = 20;
     public static final Charset UTF_8 = StandardCharsets.UTF_8;
     public static final int WRITE = SelectionKey.OP_WRITE;
     public static final int READ = SelectionKey.OP_READ;
@@ -94,12 +97,28 @@ public class GeneralCode {
     }
 
     // :NOTE: Boolean method 'validateThread' is always inverted
+    // :FIXED:
     public static boolean validateThread(int threads) {
-        if (threads <= 0) {
+        if (threads < 1) {
             System.err.println("Error: number of threads must be 1 or greater.");
-            return false;
+            return true;
         }
-        return true;
+        return false;
+    }
+
+    public static void shutdownAndAwaitTermination(ExecutorService executorService) {
+        executorService.shutdown();
+        try {
+            if (!executorService.awaitTermination(TIMEOUT, TimeUnit.MILLISECONDS)) {
+                executorService.shutdownNow();
+                if (!executorService.awaitTermination(TIMEOUT, TimeUnit.MILLISECONDS)) {
+                    System.err.println("Error: something gon wrong while shutdown executor service.");
+                }
+            }
+        } catch (InterruptedException ie) {
+            executorService.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 
     //===================================================================//
@@ -110,16 +129,21 @@ public class GeneralCode {
 
     private static void launchKeyForClient(SelectionKey key, DatagramChannel channel) {
         HelloUDPNonblockingClient.Client  client = (HelloUDPNonblockingClient.Client) key.attachment();
-        String message = buildMessage(client.prefix, client.thread, client.request);
-        ByteBuffer buffer = ByteBuffer.allocate(buildHelloMessage(message).length());
+        String requestMessage = buildMessage(client.prefix, client.thread, client.request);
+        ByteBuffer buffer;
+        try {
+            buffer = ByteBuffer.allocate(channel.socket().getReceiveBufferSize());
+        } catch (SocketException e) {
+            buffer = ByteBuffer.allocate(buildHelloMessage(requestMessage).length());
+        }
 
         if (key.isReadable()) {
             try {
                 buffer.clear();
                 final SocketAddress socketAddress = channel.receive(buffer);
                 if (socketAddress != null) {
-                    String receivedMessage = new String(buffer.array(), UTF_8);
-                    if (receivedMessage.contains(message)) {
+                    String responseMessage = new String(buffer.array(), UTF_8);
+                    if (responseMessage.contains(requestMessage)) {
                         setKey(key, WRITE);
                         if (client.isAll()) {
                             channel.close();
@@ -137,7 +161,7 @@ public class GeneralCode {
                 setKey(key, WRITE);
             }
         } else if (key.isWritable()) {
-            buffer = ByteBuffer.wrap(Objects.requireNonNull(message).getBytes(UTF_8));
+            buffer = ByteBuffer.wrap(Objects.requireNonNull(requestMessage).getBytes(UTF_8));
             try {
                 channel.write(buffer);
             } catch (IOException e) {
@@ -165,4 +189,3 @@ public class GeneralCode {
         }
     }
 }
-

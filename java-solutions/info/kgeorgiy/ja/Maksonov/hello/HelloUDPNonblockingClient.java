@@ -27,7 +27,7 @@ public class HelloUDPNonblockingClient implements HelloClient {
 
     @Override
     public void run(String host, int port, String prefix, int threads, int requests) {
-        if (!validateThread(threads)) {
+        if (validateThread(threads)) {
             return;
         }
         try {

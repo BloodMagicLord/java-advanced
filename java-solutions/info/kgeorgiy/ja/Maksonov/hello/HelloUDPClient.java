@@ -40,7 +40,7 @@ public class HelloUDPClient implements HelloClient {
      */
     @Override
     public void run(String host, int port, String prefix, int threads, int requests) {
-        if (!validateThread(threads)) {
+        if (validateThread(threads)) {
             return;
         }
 
@@ -89,13 +89,19 @@ public class HelloUDPClient implements HelloClient {
      * @param requestMessage message for request
      */
     private static void sendAndReceive(DatagramSocket socket, int port, InetAddress inetAddress, String requestMessage) {
-        final String expectedResponseMessage = "Hello, " + requestMessage;
-        final int size = expectedResponseMessage.length();
+        final int size;
+        int temp;
+        try {
+            temp = socket.getReceiveBufferSize();
+        } catch (SocketException e) {
+            temp = ("Hello, " + requestMessage).length();
+        }
+        size = temp;
         String responseMessage = "";
         byte[] bytes = requestMessage.getBytes(UTF_8);
         DatagramPacket request = new DatagramPacket(bytes, bytes.length, inetAddress, port);
 
-        while (!responseMessage.equals(expectedResponseMessage)) {
+        while (!responseMessage.contains(requestMessage)) {
             try {
                 socket.send(request);
                 DatagramPacket response = new DatagramPacket(new byte[size], size);

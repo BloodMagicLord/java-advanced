@@ -6,7 +6,6 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -52,25 +51,25 @@ public class Walk {
         return bytesToString(hash);
     }
 
-    private static List<String> recursiveHash(Path path, String pathString) throws IOException {
-        final File file = new File(pathString);
-        final File[] files = file.listFiles();
-        List<String> hashes = new ArrayList<>();
-        final BasicFileAttributes basicFileAttributes = Files.readAttributes(path, BasicFileAttributes.class);
-        if (basicFileAttributes.isDirectory()) {
-            if (files != null) {
-                for (final File f : files) {
-                    hashes.addAll(recursiveHash(f.toPath(), f.getPath()));
-                }
-            }
-        } else if (basicFileAttributes.isRegularFile()) {
-            hashes.add(buildString(getHash(path, pathString), pathString));
-        }
-        return hashes;
-    }
-
     private static String buildString(String hash, String path) {
         return String.format("%s %s", hash, path);
+    }
+
+    private static List<String> recursiveFiles(String pathName) throws InvalidPathException {
+        final File file = new File(pathName);
+        final File[] files = file.listFiles();
+        List<String> fileNames = new ArrayList<>();
+
+        if (files != null) {
+            for (final File f : files) {
+                fileNames.addAll(recursiveFiles(f.getPath()));
+            }
+            fileNames.add(pathName);
+        } else {
+            fileNames.add(pathName);
+        }
+
+        return fileNames;
     }
 
     public static void main (String[] args) {
@@ -110,14 +109,20 @@ public class Walk {
                 while ((line = reader.readLine()) != null) {
                     try {
                         Path path = Paths.get(line);
-                        for (String hash : recursiveHash(path, line)) {
-                            writer.write(String.format("%s", hash));
+                        List <String> fileNames = recursiveFiles(line);
+
+                        for (String fileName : fileNames) {
+                            try {
+                                writer.write(buildString(getHash(Paths.get(fileName), fileName), fileName));
+                            } catch (IOException | InvalidPathException e) {
+                                if (e instanceof IOException) {
+                                    System.err.println("Error while writing file: " + e.getMessage());
+                                }
+                                writer.write(String.format("%s", buildString(DEFAULT_HASH, fileName)));
+                            }
                             writer.newLine();
                         }
-                    } catch (IOException | InvalidPathException e) {
-                        if (e instanceof IOException) {
-                            System.err.println("Error while writing to file: " + line + " : " + e.getMessage());
-                        }
+                    } catch (InvalidPathException e) {
                         writer.write(String.format("%s", buildString(DEFAULT_HASH, line)));
                         writer.newLine();
                     }

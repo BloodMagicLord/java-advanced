@@ -44,9 +44,8 @@ public class HelloUDPNonblockingServer implements HelloServer {
             datagramChannel = openChannel();
             datagramChannel.bind(socketAddress);
             datagramChannel.register(selector, READ, new Server());
-
-            executorService = Executors.newSingleThreadExecutor();
-            executorService.submit(() -> {
+            executorService = Executors.newFixedThreadPool(threads);
+            Runnable runnable = () -> {
                 try {
                     while (datagramChannel.isOpen()) {
                         setKeys(selector, READ);
@@ -55,7 +54,11 @@ public class HelloUDPNonblockingServer implements HelloServer {
                 } catch (IOException ignored) {
                     // nothing to do
                 }
-            });
+            };
+
+            for (int i = 0; i < threads; i++) {
+                executorService.submit(runnable);
+            }
         } catch (UnknownHostException e) {
             System.err.println("Error: cannot find host by name. " + e.getMessage());
         } catch (IOException e) {

@@ -2,7 +2,7 @@
 
 Homeworks from Java-advanced course, ITMO 2021-2022
 
-## Обход файлов
+## [Обход файлов](https://github.com/BloodMagicLord/java-advanced/blob/main/java-solutions/info/kgeorgiy/ja/Maksonov/walk/Walk.java)
 1. Разработайте класс Walk, осуществляющий подсчет хеш-сумм файлов.
 	- Формат запуска:
 	```
@@ -118,7 +118,7 @@ Homeworks from Java-advanced course, ITMO 2021-2022
 	- Применение стандартных коллекций.
 	- Избавление от повторяющегося кода.
 	
-## Студенты
+## [Студенты](https://github.com/BloodMagicLord/java-advanced/blob/main/java-solutions/info/kgeorgiy/ja/Maksonov/student/StudentDB.java)
 1.	Разработайте класс `StudentDB`, осуществляющий поиск по базе данных студентов.
 	- Класс `StudentDB` должен реализовывать интерфейс `StudentQuery`.
 	- Каждый метод должен состоять из ровно одного оператора. При этом длинные операторы надо разбивать на несколько строк.
@@ -126,7 +126,7 @@ Homeworks from Java-advanced course, ITMO 2021-2022
 	- Применение лямбда-выражений и потоков.
 	- Избавление от повторяющегося кода.
 	
-## Implementor
+## [Implementor](https://github.com/BloodMagicLord/java-advanced/blob/main/java-solutions/info/kgeorgiy/ja/Maksonov/implementor/Implementor.java)
 1. Реализуйте класс `Implementor`, генерирующий реализации классов и интерфейсов.
 	- Аргумент командной строки: полное имя класса/интерфейса, для которого требуется сгенерировать реализацию.
 	- В результате работы должен быть сгенерирован java-код класса с суффиксом Impl, расширяющий (реализующий) указанный класс (интерфейс).
@@ -134,7 +134,7 @@ Homeworks from Java-advanced course, ITMO 2021-2022
 	- Сгенерированный класс не должен быть абстрактным.
 	- Методы сгенерированного класса должны игнорировать свои аргументы и возвращать значения по умолчанию.
 
-## Jar и Javadoc
+## [Jar и Javadoc](https://github.com/BloodMagicLord/java-advanced/blob/main/java-solutions/info/kgeorgiy/ja/Maksonov/implementor/Implementor.java)
 1. Jar
 	- Модифицируйте `Implementor` так, чтобы при запуске с аргументами -jar `имя-класса файл.jar` он генерировал .jar-файл с реализацией соответствующего класса (интерфейса). Для компиляции используйте код из тестов.
 	- Создайте .jar-файл, содержащий скомпилированный Implementor и сопутствующие классы.
@@ -154,7 +154,7 @@ Homeworks from Java-advanced course, ITMO 2021-2022
 3. Это домашнее задание связано с предыдущим. Предыдущее домашнее задание отдельно сдать будет нельзя.
 4. В последующих домашних заданиях все public и protected сущности должны быть документированы.
 
-## Итеративный параллелизм
+## [Итеративный параллелизм](https://github.com/BloodMagicLord/java-advanced/blob/main/java-solutions/info/kgeorgiy/ja/Maksonov/concurrent/IterativeParallelism.java)
 1. Реализуйте класс `IterativeParallelism`, который будет обрабатывать списки в несколько потоков.
 2. Должны быть реализованы следующие методы:
     - `minimum(threads, list, comparator)` — первый минимум;
@@ -167,7 +167,7 @@ Homeworks from Java-advanced course, ITMO 2021-2022
 6. Рекомендуется подумать, какое отношение к заданию имеют [моноиды](https://en.wikipedia.org/wiki/Monoid).
 
 
-## Параллельный запуск
+## [Параллельный запуск](https://github.com/BloodMagicLord/java-advanced/blob/main/java-solutions/info/kgeorgiy/ja/Maksonov/concurrent/ParallelMapperImpl.java)
 1. Напишите класс `ParallelMapperImpl`, реализующий интерфейс `ParallelMapper`.
     ```Java
     public interface ParallelMapper extends AutoCloseable {
@@ -193,7 +193,7 @@ Homeworks from Java-advanced course, ITMO 2021-2022
     - Должна быть возможность одновременного запуска и работы нескольких клиентов, использующих один `ParallelMapper`.
 
 
-## HelloUDP
+## [HelloUDP](https://github.com/BloodMagicLord/java-advanced/tree/main/java-solutions/info/kgeorgiy/ja/Maksonov/hello)
 1. Реализуйте клиент и сервер, взаимодействующие по UDP.
 2. Класс `HelloUDPClient` должен отправлять запросы на сервер, принимать результаты и выводить их на консоль.
     - Аргументы командной строки:
@@ -212,7 +212,7 @@ Homeworks from Java-advanced course, ITMO 2021-2022
     - Несмотря на то, что текущий способ получения ответа по запросу очень прост, сервер должен быть рассчитан на ситуацию, когда этот процесс может требовать много ресурсов и времени.
     - Если сервер не успевает обрабатывать запросы, прием запросов может быть временно приостановлен.
 
-## HelloNonblockingUDP
+## [HelloNonblockingUDP](https://github.com/BloodMagicLord/java-advanced/tree/main/java-solutions/info/kgeorgiy/ja/Maksonov/hello)
 1. Реализуйте клиент и сервер, взаимодействующие по UDP, используя только неблокирующий ввод-вывод.
 2. Класс `HelloUDPNonblockingClient` должен иметь функциональность аналогичную `HelloUDPClient`, но без создания новых потоков.
 3. Класс `HelloUDPNonblockingServer` должен иметь функциональность аналогичную `HelloUDPServer`, но все операции с сокетом должны производиться в одном потоке.

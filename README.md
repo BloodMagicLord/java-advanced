@@ -109,7 +109,7 @@ Homeworks from Java-advanced course, ITMO 2021-2022
 	- Проверяется исходный код задания.
 	- Весь код должен находиться в пакете info.kgeorgiy.ja.фамилия.walk.
 
-## Множество на массиве
+## [Множество на массиве](https://github.com/BloodMagicLord/java-advanced/blob/main/java-solutions/info/kgeorgiy/ja/Maksonov/arrayset/ArraySet.java)
 
 1. Разработайте класс ArraySet, реализующий неизменяемое упорядоченное множество.
 	- Класс `ArraySet` должен реализовывать интерфейс [SortedSet](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/SortedSet.html).
